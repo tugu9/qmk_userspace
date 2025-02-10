@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include QMK_KEYBOARD_H
+#include "features/achordion.h"
+// #include "print.h"
 
 #ifdef CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_ENABLE
 #    include "timer.h"
@@ -24,10 +26,10 @@ enum charybdis_keymap_layers {
     LAYER_BASE = 0,
     LAYER_FUNCTION,
     LAYER_NAVIGATION,
-    LAYER_MEDIA,
     LAYER_POINTER,
     LAYER_NUMERAL,
     LAYER_SYMBOLS,
+    LAYER_MY_SYMBOLS,
 };
 
 // Automatically enable sniping-mode on the pointer layer.
@@ -45,10 +47,10 @@ static uint16_t auto_pointer_layer_timer = 0;
 #    endif // CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_THRESHOLD
 #endif     // CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_ENABLE
 
-#define ESC_MED LT(LAYER_MEDIA, KC_ESC)
 #define SPC_NAV LT(LAYER_NAVIGATION, KC_SPC)
-#define TAB_FUN LT(LAYER_FUNCTION, KC_TAB)
+#define TAB_SYM LT(LAYER_MY_SYMBOLS, KC_TAB)
 #define ENT_SYM LT(LAYER_SYMBOLS, KC_ENT)
+#define ESC_FUN LT(LAYER_FUNCTION, KC_ESC)
 #define BSP_NUM LT(LAYER_NUMERAL, KC_BSPC)
 #define _L_PTR(KC) LT(LAYER_POINTER, KC)
 
@@ -65,7 +67,7 @@ static uint16_t auto_pointer_layer_timer = 0;
        KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, \
        KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L, KC_QUOT, \
        KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, \
-                      ESC_MED, SPC_NAV, TAB_FUN, ENT_SYM, BSP_NUM
+                      ESC_FUN, SPC_NAV, TAB_SYM, ENT_SYM, BSP_NUM
 
 /** Convenience row shorthands. */
 #define _______________DEAD_HALF_ROW_______________ XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX
@@ -94,26 +96,14 @@ static uint16_t auto_pointer_layer_timer = 0;
     _______________DEAD_HALF_ROW_______________, KC_PSCR,   KC_F7,   KC_F8,   KC_F9,  KC_F12, \
     ______________HOME_ROW_GACS_L______________, KC_SCRL,   KC_F4,   KC_F5,   KC_F6,  KC_F11, \
     _______________DEAD_HALF_ROW_______________, KC_PAUS,   KC_F1,   KC_F2,   KC_F3,  KC_F10, \
-                      XXXXXXX, XXXXXXX, _______, XXXXXXX, XXXXXXX
-
-/**
- * \brief Media layer.
- *
- * Tertiary left- and right-hand layer is media and RGB control.  This layer is
- * symmetrical to accomodate the left- and right-hand trackball.
- */
-#define LAYOUT_LAYER_MEDIA                                                                    \
-    XXXXXXX,RGB_RMOD, RGB_TOG, RGB_MOD, XXXXXXX, XXXXXXX,RGB_RMOD, RGB_TOG, RGB_MOD, XXXXXXX, \
-    KC_MPRV, KC_VOLD, KC_MUTE, KC_VOLU, KC_MNXT, KC_MPRV, KC_VOLD, KC_MUTE, KC_VOLU, KC_MNXT, \
-    XXXXXXX, XXXXXXX, XXXXXXX,  EE_CLR, QK_BOOT, QK_BOOT,  EE_CLR, XXXXXXX, XXXXXXX, XXXXXXX, \
-                      _______, KC_MPLY, KC_MSTP, KC_MSTP, KC_MPLY
+                      _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX
 
 /** \brief Mouse emulation and pointer functions. */
 #define LAYOUT_LAYER_POINTER                                                                  \
-    QK_BOOT,  EE_CLR, XXXXXXX, DPI_MOD, S_D_MOD, S_D_MOD, DPI_MOD, XXXXXXX,  EE_CLR, QK_BOOT, \
+    XXXXXXX, XXXXXXX, XXXXXXX, DPI_MOD, S_D_MOD, S_D_MOD, DPI_MOD, XXXXXXX, XXXXXXX, XXXXXXX, \
     ______________HOME_ROW_GACS_L______________, ______________HOME_ROW_GACS_R______________, \
-    _______, DRGSCRL, SNIPING, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, SNIPING, DRGSCRL, _______, \
-                      KC_BTN2, KC_BTN1, KC_BTN3, KC_BTN3, KC_BTN1
+    _______, DRGSCRL, SNIPING, XXXXXXX, XXXXXXX, XXXXXXX, KC_BTN1, KC_BTN3, KC_BTN2, _______, \
+                      KC_BTN2, KC_BTN1, KC_BTN3, XXXXXXX, XXXXXXX
 
 /**
  * \brief Navigation layer.
@@ -154,6 +144,15 @@ static uint16_t auto_pointer_layer_timer = 0;
     KC_COLN,  KC_DLR, KC_PERC, KC_CIRC, KC_PLUS, ______________HOME_ROW_GACS_R______________, \
     KC_TILD, KC_EXLM,   KC_AT, KC_HASH, KC_PIPE, _______________DEAD_HALF_ROW_______________, \
                       KC_LPRN, KC_RPRN, KC_UNDS, _______, XXXXXXX
+
+/**
+ * \brief My symbols layer.
+ */
+#define LAYOUT_LAYER_MY_SYMBOLS                                                               \
+    KC_GRV,  KC_TILD, KC_HASH, KC_AMPR, KC_PIPE, KC_CIRC, KC_LCBR, KC_RCBR, KC_LBRC, KC_RBRC, \
+    KC_EXLM, KC_UNDS, KC_COLN, KC_EQL,  KC_DLR,  KC_AT,   KC_LPRN, KC_RPRN, KC_UNDS, KC_SCLN, \
+    KC_PERC, KC_QUES, KC_ASTR, KC_PLUS, KC_BSLS, KC_SLSH, KC_MINS, KC_LABK, KC_RABK, KC_DQUO, \
+                      XXXXXXX, KC_SPC,  _______, KC_ENT,  KC_BSPC
 
 /**
  * \brief Add Home Row mod to a layout.
@@ -208,10 +207,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
   [LAYER_FUNCTION] = LAYOUT_wrapper(LAYOUT_LAYER_FUNCTION),
   [LAYER_NAVIGATION] = LAYOUT_wrapper(LAYOUT_LAYER_NAVIGATION),
-  [LAYER_MEDIA] = LAYOUT_wrapper(LAYOUT_LAYER_MEDIA),
   [LAYER_NUMERAL] = LAYOUT_wrapper(LAYOUT_LAYER_NUMERAL),
   [LAYER_POINTER] = LAYOUT_wrapper(LAYOUT_LAYER_POINTER),
   [LAYER_SYMBOLS] = LAYOUT_wrapper(LAYOUT_LAYER_SYMBOLS),
+  [LAYER_MY_SYMBOLS] = LAYOUT_wrapper(LAYOUT_LAYER_MY_SYMBOLS),
 };
 // clang-format on
 
@@ -245,6 +244,13 @@ void matrix_scan_user(void) {
 #    ifdef CHARYBDIS_AUTO_SNIPING_ON_LAYER
 layer_state_t layer_state_set_user(layer_state_t state) {
     charybdis_set_pointer_sniping_enabled(layer_state_cmp(state, CHARYBDIS_AUTO_SNIPING_ON_LAYER));
+
+    // Auto enable scroll mode when the highest layer is base or pointer
+    if (!layer_state_cmp(state, LAYER_BASE) && !layer_state_cmp(state, LAYER_POINTER))
+        charybdis_set_pointer_dragscroll_enabled(true);
+    else
+        charybdis_set_pointer_dragscroll_enabled(false);
+
     return state;
 }
 #    endif // CHARYBDIS_AUTO_SNIPING_ON_LAYER
@@ -255,3 +261,66 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 // rgb_matrix.c.
 void rgb_matrix_update_pwm_buffers(void);
 #endif
+
+/* Combos */
+enum combo_events {
+  CAPS_LOCK_COMBO,  // LT3 and RT3 => activate Caps Lock.
+  CAPS_WORD_COMBO,  // LT2 and RT2 => activate Caps Word.
+  COMBO_LENGTH
+};
+uint16_t COMBO_LEN = COMBO_LENGTH;
+
+const uint16_t caps_word_combo[] PROGMEM = {KC_E, KC_I, COMBO_END};
+
+combo_t key_combos[] = {
+    [CAPS_WORD_COMBO] = COMBO(caps_word_combo, CW_TOGG),
+};
+
+/* Achordion for better mod taps */
+uint16_t achordion_timeout(uint16_t tap_hold_keycode) {
+  // uprintf("foo %u\n", tap_hold_keycode);
+  // TTODO fix find the keycode for this
+  if (tap_hold_keycode == 16940)
+      return 0;
+
+  return 500;
+}
+
+bool achordion_chord(uint16_t tap_hold_keycode,
+                     keyrecord_t* tap_hold_record,
+                     uint16_t other_keycode,
+                     keyrecord_t* other_record) {
+  /* Exclude thumb clusters */
+  if (other_record->event.key.row == 3
+      || other_record->event.key.row == 7) {
+      return true;
+  }
+
+  // Otherwise, follow the opposite hands rule.
+  return achordion_opposite_hands(tap_hold_record, other_record);
+}
+
+bool achordion_eager_mod(uint8_t mod) {
+  switch (mod) {
+    case MOD_LSFT:
+    case MOD_RSFT:
+    case MOD_LCTL:
+    case MOD_RCTL:
+      return true;  // Eagerly apply Shift and Ctrl mods.
+
+    default:
+      return false;
+  }
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t* record) {
+  if (!process_achordion(keycode, record)) {
+      return false;
+  }
+
+  return true;
+}
+
+void housekeeping_task_user(void) {
+  achordion_task();
+}
